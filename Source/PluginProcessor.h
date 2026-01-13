@@ -37,6 +37,9 @@ public:
     //==============================================================================
     const juce::String getName() const override;
 
+    bool acceptsMidi() const override;
+    bool producesMidi() const override;
+    bool isMidiEffect() const override;
     double getTailLengthSeconds() const override;
 
     //==============================================================================
@@ -50,7 +53,14 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
 private:
     //==============================================================================
+    juce::AudioProcessorValueTreeState parameters;
+
+    std::atomic<float>* inputGainParam = nullptr;
+    std::atomic<float>* outputGainParam = nullptr;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioClipperAudioProcessor)
 };

@@ -10,6 +10,25 @@
 #include "PluginEditor.h"
 
 //==============================================================================
+juce::AudioProcessorValueTreeState::ParameterLayout AudioClipperAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID ("inputGain", 1),
+        "Input Gain",
+        juce::NormalisableRange<float> (-24.0f, 24.0f),
+        0.0f));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID ("outputGain", 1),
+        "Output Gain",
+        juce::NormalisableRange<float> (-24.0f, 24.0f),
+        0.0f));
+
+    return layout;
+}
+
 AudioClipperAudioProcessor::AudioClipperAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
@@ -21,7 +40,13 @@ AudioClipperAudioProcessor::AudioClipperAudioProcessor()
                      #endif
                        )
 #endif
+       , parameters (*this, nullptr, juce::Identifier ("AudioClipper"), createParameterLayout())
 {
+    inputGainParam  = parameters.getRawParameterValue ("inputGain");
+    outputGainParam = parameters.getRawParameterValue ("outputGain");
+
+    jassert (inputGainParam != nullptr);
+    jassert (outputGainParam != nullptr);
 }
 
 AudioClipperAudioProcessor::~AudioClipperAudioProcessor()
@@ -32,6 +57,21 @@ AudioClipperAudioProcessor::~AudioClipperAudioProcessor()
 const juce::String AudioClipperAudioProcessor::getName() const
 {
     return JucePlugin_Name;
+}
+
+bool AudioClipperAudioProcessor::acceptsMidi() const
+{
+    return false;
+}
+
+bool AudioClipperAudioProcessor::producesMidi() const
+{
+    return false;
+}
+
+bool AudioClipperAudioProcessor::isMidiEffect() const
+{
+    return false;
 }
 
 double AudioClipperAudioProcessor::getTailLengthSeconds() const
@@ -117,17 +157,29 @@ void AudioClipperAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
+    // Get parameter values and convert from dB to linear gain
+    float inputGainDb  = (inputGainParam != nullptr) ? inputGainParam->load() : 0.0f;
+    float outputGainDb = (outputGainParam != nullptr) ? outputGainParam->load() : 0.0f;
+    float inputGain    = juce::Decibels::decibelsToGain (inputGainDb);
+    float outputGain   = juce::Decibels::decibelsToGain (outputGainDb);
+
+    // Process each channel
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
         auto* channelData = buffer.getWritePointer (channel);
 
-        // ..do something to the data...
+        // Process each sample
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
+            // Apply input gain
+            float input = channelData[sample] * inputGain;
+
+            // Apply tanh soft clipping
+            float clipped = std::tanh (input);
+
+            // Apply output gain
+            channelData[sample] = clipped * outputGain;
+        }
     }
 }
 
@@ -145,15 +197,17 @@ juce::AudioProcessorEditor* AudioClipperAudioProcessor::createEditor()
 //==============================================================================
 void AudioClipperAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    auto state = parameters.copyState();
+    std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    copyXmlToBinary (*xml, destData);
 }
 
 void AudioClipperAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName (parameters.state.getType()))
+            parameters.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
 //==============================================================================
