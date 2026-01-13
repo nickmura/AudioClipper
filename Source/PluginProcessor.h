@@ -14,9 +14,6 @@
 /**
 */
 class AudioPlugin1AudioProcessor  : public juce::AudioProcessor
-                            #if JucePlugin_Enable_ARA
-                             , public juce::AudioProcessorARAExtension
-                            #endif
 {
 public:
     //==============================================================================
@@ -40,9 +37,6 @@ public:
     //==============================================================================
     const juce::String getName() const override;
 
-    bool acceptsMidi() const override;
-    bool producesMidi() const override;
-    bool isMidiEffect() const override;
     double getTailLengthSeconds() const override;
 
     //==============================================================================

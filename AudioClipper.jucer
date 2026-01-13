@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="JrjEDb" name="AudioPlugin1" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
-  <MAINGROUP id="MnNpsG" name="AudioPlugin1">
+<JUCERPROJECT id="JrjEDb" name="AudioClipper" projectType="audioplug" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
+              pluginManufacturer="Nick Mura">
+  <MAINGROUP id="MnNpsG" name="AudioClipper">
     <GROUP id="{62786B5F-791D-46A3-E7BE-AB9DF8D68331}" name="Source">
       <FILE id="FjeG6F" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
