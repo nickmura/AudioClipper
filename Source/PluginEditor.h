@@ -27,7 +27,14 @@ public:
 private:
     AudioClipperAudioProcessor& audioProcessor;
 
+    juce::Slider inputGainSlider;
+    juce::Slider outputGainSlider;
 
+    juce::Label inputGainLabel;
+    juce::Label outputGainLabel;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> outputGainAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioClipperAudioProcessorEditor)
 };
