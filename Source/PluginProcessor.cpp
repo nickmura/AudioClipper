@@ -10,7 +10,7 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-AudioPlugin1AudioProcessor::AudioPlugin1AudioProcessor()
+AudioClipperAudioProcessor::AudioClipperAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
@@ -24,60 +24,60 @@ AudioPlugin1AudioProcessor::AudioPlugin1AudioProcessor()
 {
 }
 
-AudioPlugin1AudioProcessor::~AudioPlugin1AudioProcessor()
+AudioClipperAudioProcessor::~AudioClipperAudioProcessor()
 {
 }
 
 //==============================================================================
-const juce::String AudioPlugin1AudioProcessor::getName() const
+const juce::String AudioClipperAudioProcessor::getName() const
 {
     return JucePlugin_Name;
 }
 
-double AudioPlugin1AudioProcessor::getTailLengthSeconds() const
+double AudioClipperAudioProcessor::getTailLengthSeconds() const
 {
     return 0.0;
 }
 
-int AudioPlugin1AudioProcessor::getNumPrograms()
+int AudioClipperAudioProcessor::getNumPrograms()
 {
     return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
                 // so this should be at least 1, even if you're not really implementing programs.
 }
 
-int AudioPlugin1AudioProcessor::getCurrentProgram()
+int AudioClipperAudioProcessor::getCurrentProgram()
 {
     return 0;
 }
 
-void AudioPlugin1AudioProcessor::setCurrentProgram (int index)
+void AudioClipperAudioProcessor::setCurrentProgram (int index)
 {
 }
 
-const juce::String AudioPlugin1AudioProcessor::getProgramName (int index)
+const juce::String AudioClipperAudioProcessor::getProgramName (int index)
 {
     return {};
 }
 
-void AudioPlugin1AudioProcessor::changeProgramName (int index, const juce::String& newName)
+void AudioClipperAudioProcessor::changeProgramName (int index, const juce::String& newName)
 {
 }
 
 //==============================================================================
-void AudioPlugin1AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void AudioClipperAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
 }
 
-void AudioPlugin1AudioProcessor::releaseResources()
+void AudioClipperAudioProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool AudioPlugin1AudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool AudioClipperAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
   #if JucePlugin_IsMidiEffect
     juce::ignoreUnused (layouts);
@@ -102,7 +102,7 @@ bool AudioPlugin1AudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 }
 #endif
 
-void AudioPlugin1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void AudioClipperAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
@@ -132,25 +132,25 @@ void AudioPlugin1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 }
 
 //==============================================================================
-bool AudioPlugin1AudioProcessor::hasEditor() const
+bool AudioClipperAudioProcessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor* AudioPlugin1AudioProcessor::createEditor()
+juce::AudioProcessorEditor* AudioClipperAudioProcessor::createEditor()
 {
-    return new AudioPlugin1AudioProcessorEditor (*this);
+    return new AudioClipperAudioProcessorEditor (*this);
 }
 
 //==============================================================================
-void AudioPlugin1AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void AudioClipperAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
 }
 
-void AudioPlugin1AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void AudioClipperAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
@@ -160,5 +160,5 @@ void AudioPlugin1AudioProcessor::setStateInformation (const void* data, int size
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new AudioPlugin1AudioProcessor();
+    return new AudioClipperAudioProcessor();
 }

@@ -13,12 +13,12 @@
 //==============================================================================
 /**
 */
-class AudioPlugin1AudioProcessor  : public juce::AudioProcessor
+class AudioClipperAudioProcessor  : public juce::AudioProcessor
 {
 public:
     //==============================================================================
-    AudioPlugin1AudioProcessor();
-    ~AudioPlugin1AudioProcessor() override;
+    AudioClipperAudioProcessor();
+    ~AudioClipperAudioProcessor() override;
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -52,5 +52,5 @@ public:
 
 private:
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPlugin1AudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioClipperAudioProcessor)
 };
