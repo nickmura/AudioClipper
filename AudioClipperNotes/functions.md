@@ -1,11 +1,11 @@
  Functionalities to Build On:
 
   Core DSP:
-  1. Multiple clipping algorithms - tanh, arctan, cubic, atan, hard clip
-  2. Input/Output gain - control how hard you drive into the clipper
-  3. Threshold control - where clipping starts
-  4. Mix (dry/wet) - blend processed/unprocessed signal
-  5. Oversampling (2x, 4x) - anti-aliasing filters, latency compensated, reduce aliasing artifacts from nonlinear processing
+  1. [DONE] Multiple clipping algorithms - tanh, arctan, cubic, hard clip
+  2. [DONE] Input/Output gain - control how hard you drive into the clipper
+  3. [DONE] Threshold control - where clipping starts
+  4. [DONE] Mix (dry/wet) - blend processed/unprocessed signal
+  5. [DONE] Oversampling (1x, 2x, 4x) - anti-aliasing filters, latency compensated
 
   Stereo Features:
   6. Stereo link toggle - clip based on max(L,R) vs independent
