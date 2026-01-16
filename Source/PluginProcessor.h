@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <juce_dsp/juce_dsp.h>
 
 //==============================================================================
 /**
@@ -37,6 +38,9 @@ public:
     //==============================================================================
     const juce::String getName() const override;
 
+    bool acceptsMidi() const override;
+    bool producesMidi() const override;
+    bool isMidiEffect() const override;
     double getTailLengthSeconds() const override;
 
     //==============================================================================
@@ -50,7 +54,35 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
+    juce::AudioProcessorValueTreeState parameters;
+
 private:
     //==============================================================================
+    // Clipping function type
+    using ClipFunction = float (*)(float);
+
+    static float clipTanh (float x);
+    static float clipArctan (float x);
+    static float clipCubic (float x);
+    static float clipHard (float x);
+
+    static constexpr std::array<ClipFunction, 4> clipFunctions = {
+        clipTanh, clipArctan, clipCubic, clipHard
+    };
+
+    // Parameter pointers
+    std::atomic<float>* inputGainParam = nullptr;
+    std::atomic<float>* outputGainParam = nullptr;
+    std::atomic<float>* clipTypeParam = nullptr;
+    std::atomic<float>* thresholdParam = nullptr;
+    std::atomic<float>* mixParam = nullptr;
+    std::atomic<float>* oversamplingParam = nullptr;
+
+    // DSP components
+    std::array<std::unique_ptr<juce::dsp::Oversampling<float>>, 3> oversamplers;
+    juce::dsp::DryWetMixer<float> dryWetMixer { 512 };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioClipperAudioProcessor)
 };

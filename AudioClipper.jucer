@@ -2,7 +2,8 @@
 
 <JUCERPROJECT id="JrjEDb" name="AudioClipper" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
-              pluginManufacturer="Nick Mura">
+              pluginManufacturer="Nick Mura" pluginManufacturerCode="NCMK"
+              pluginCode="CLIP">
   <MAINGROUP id="MnNpsG" name="AudioClipper">
     <GROUP id="{62786B5F-791D-46A3-E7BE-AB9DF8D68331}" name="Source">
       <FILE id="FjeG6F" name="PluginProcessor.cpp" compile="1" resource="0"
@@ -19,7 +20,7 @@
     <XCODE_MAC targetFolder="Builds/MacOSX">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="AudioClipper"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="AudioClipper"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="AudioClipper" enablePluginBinaryCopyStep="0"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="JUCE/modules"/>
@@ -34,6 +35,7 @@
         <MODULEPATH id="juce_graphics" path="JUCE/modules"/>
         <MODULEPATH id="juce_gui_basics" path="JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>
@@ -47,6 +49,7 @@
     <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>

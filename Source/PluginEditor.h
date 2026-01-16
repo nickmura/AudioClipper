@@ -25,9 +25,35 @@ public:
     void resized() override;
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
     AudioClipperAudioProcessor& audioProcessor;
+
+    // Sliders
+    juce::Slider inputGainSlider;
+    juce::Slider outputGainSlider;
+    juce::Slider thresholdSlider;
+    juce::Slider mixSlider;
+
+    // Labels
+    juce::Label inputGainLabel;
+    juce::Label outputGainLabel;
+    juce::Label thresholdLabel;
+    juce::Label mixLabel;
+    juce::Label clipTypeLabel;
+    juce::Label oversamplingLabel;
+
+    // ComboBoxes
+    juce::ComboBox clipTypeCombo;
+    juce::ComboBox oversamplingCombo;
+
+    // Slider attachments
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> outputGainAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> thresholdAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> mixAttachment;
+
+    // ComboBox attachments
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> clipTypeAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> oversamplingAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioClipperAudioProcessorEditor)
 };

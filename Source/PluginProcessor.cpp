@@ -10,6 +10,73 @@
 #include "PluginEditor.h"
 
 //==============================================================================
+// Static clipping functions
+float AudioClipperAudioProcessor::clipTanh (float x)
+{
+    return std::tanh (x);
+}
+
+float AudioClipperAudioProcessor::clipArctan (float x)
+{
+    return (2.0f / juce::MathConstants<float>::pi) * std::atan (x);
+}
+
+float AudioClipperAudioProcessor::clipCubic (float x)
+{
+    // Soft saturation, clamp to prevent inversion outside [-1.5, 1.5]
+    x = juce::jlimit (-1.5f, 1.5f, x);
+    return x - (x * x * x) / 3.0f;
+}
+
+float AudioClipperAudioProcessor::clipHard (float x)
+{
+    return juce::jlimit (-1.0f, 1.0f, x);
+}
+
+//==============================================================================
+juce::AudioProcessorValueTreeState::ParameterLayout AudioClipperAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID ("inputGain", 1),
+        "Input Gain",
+        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
+        0.0f));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID ("outputGain", 1),
+        "Output Gain",
+        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
+        0.0f));
+
+    layout.add (std::make_unique<juce::AudioParameterChoice> (
+        juce::ParameterID ("clipType", 1),
+        "Clip Type",
+        juce::StringArray { "Tanh", "Arctan", "Cubic", "Hard Clip" },
+        0));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID ("threshold", 1),
+        "Threshold",
+        juce::NormalisableRange<float> (-24.0f, 0.0f, 0.1f),
+        0.0f));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID ("mix", 1),
+        "Mix",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f),
+        100.0f));
+
+    layout.add (std::make_unique<juce::AudioParameterChoice> (
+        juce::ParameterID ("oversampling", 1),
+        "Oversampling",
+        juce::StringArray { "Off", "2x", "4x" },
+        0));
+
+    return layout;
+}
+
 AudioClipperAudioProcessor::AudioClipperAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
@@ -21,7 +88,32 @@ AudioClipperAudioProcessor::AudioClipperAudioProcessor()
                      #endif
                        )
 #endif
+       , parameters (*this, nullptr, juce::Identifier ("AudioClipper"), createParameterLayout())
 {
+    inputGainParam    = parameters.getRawParameterValue ("inputGain");
+    outputGainParam   = parameters.getRawParameterValue ("outputGain");
+    clipTypeParam     = parameters.getRawParameterValue ("clipType");
+    thresholdParam    = parameters.getRawParameterValue ("threshold");
+    mixParam          = parameters.getRawParameterValue ("mix");
+    oversamplingParam = parameters.getRawParameterValue ("oversampling");
+
+    jassert (inputGainParam != nullptr);
+    jassert (outputGainParam != nullptr);
+    jassert (clipTypeParam != nullptr);
+    jassert (thresholdParam != nullptr);
+    jassert (mixParam != nullptr);
+    jassert (oversamplingParam != nullptr);
+
+    // Initialize oversamplers (2 channels each)
+    // Index 0: 1x (no oversampling - uses factor 0 which means 2^0 = 1x)
+    oversamplers[0] = std::make_unique<juce::dsp::Oversampling<float>> (2, 0,
+        juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true, true);
+    // Index 1: 2x (factor 1 = 2^1)
+    oversamplers[1] = std::make_unique<juce::dsp::Oversampling<float>> (2, 1,
+        juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true, true);
+    // Index 2: 4x (factor 2 = 2^2)
+    oversamplers[2] = std::make_unique<juce::dsp::Oversampling<float>> (2, 2,
+        juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true, true);
 }
 
 AudioClipperAudioProcessor::~AudioClipperAudioProcessor()
@@ -32,6 +124,21 @@ AudioClipperAudioProcessor::~AudioClipperAudioProcessor()
 const juce::String AudioClipperAudioProcessor::getName() const
 {
     return JucePlugin_Name;
+}
+
+bool AudioClipperAudioProcessor::acceptsMidi() const
+{
+    return false;
+}
+
+bool AudioClipperAudioProcessor::producesMidi() const
+{
+    return false;
+}
+
+bool AudioClipperAudioProcessor::isMidiEffect() const
+{
+    return false;
 }
 
 double AudioClipperAudioProcessor::getTailLengthSeconds() const
@@ -66,14 +173,26 @@ void AudioClipperAudioProcessor::changeProgramName (int index, const juce::Strin
 //==============================================================================
 void AudioClipperAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    // Prepare all oversamplers
+    for (auto& os : oversamplers)
+        os->initProcessing (static_cast<size_t> (samplesPerBlock));
+
+    // Prepare dry/wet mixer
+    juce::dsp::ProcessSpec spec;
+    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = static_cast<juce::uint32> (samplesPerBlock);
+    spec.numChannels = static_cast<juce::uint32> (getTotalNumInputChannels());
+
+    dryWetMixer.prepare (spec);
+    dryWetMixer.setMixingRule (juce::dsp::DryWetMixingRule::linear);
 }
 
 void AudioClipperAudioProcessor::releaseResources()
 {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
+    for (auto& os : oversamplers)
+        os->reset();
+
+    dryWetMixer.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -104,31 +223,71 @@ bool AudioClipperAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 
 void AudioClipperAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    juce::ignoreUnused (midiMessages);
     juce::ScopedNoDenormals noDenormals;
+
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
+    // Clear any extra output channels
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
+    // Get parameter values
+    const float inputGainDb   = inputGainParam->load();
+    const float outputGainDb  = outputGainParam->load();
+    const float thresholdDb   = thresholdParam->load();
+    const float mixPercent    = mixParam->load();
+    const int clipTypeIndex   = static_cast<int> (clipTypeParam->load());
+    const int osIndex         = static_cast<int> (oversamplingParam->load());
 
-        // ..do something to the data...
+    // Convert to linear values
+    const float inputGain     = juce::Decibels::decibelsToGain (inputGainDb);
+    const float outputGain    = juce::Decibels::decibelsToGain (outputGainDb);
+    const float thresholdLin  = juce::Decibels::decibelsToGain (thresholdDb);
+    const float invThreshold  = (thresholdLin > 0.0001f) ? 1.0f / thresholdLin : 1.0f;
+
+    // Get the clipping function (avoids per-sample branching)
+    ClipFunction clipFunc = clipFunctions[static_cast<size_t> (clipTypeIndex)];
+
+    // Update dry/wet mix
+    dryWetMixer.setWetMixProportion (mixPercent / 100.0f);
+    dryWetMixer.setWetLatency (static_cast<float> (oversamplers[static_cast<size_t> (osIndex)]->getLatencyInSamples()));
+
+    // Create audio block for DSP processing
+    juce::dsp::AudioBlock<float> block (buffer);
+
+    // Push dry samples for later mixing
+    dryWetMixer.pushDrySamples (juce::dsp::AudioBlock<const float> (block));
+
+    // Apply input gain
+    block.multiplyBy (inputGain);
+
+    // Upsample
+    auto oversampledBlock = oversamplers[static_cast<size_t> (osIndex)]->processSamplesUp (block);
+
+    // Process clipping on oversampled block
+    for (size_t channel = 0; channel < oversampledBlock.getNumChannels(); ++channel)
+    {
+        auto* channelData = oversampledBlock.getChannelPointer (channel);
+
+        for (size_t sample = 0; sample < oversampledBlock.getNumSamples(); ++sample)
+        {
+            // Apply threshold scaling, clip, then scale back
+            float scaled = channelData[sample] * invThreshold;
+            float clipped = clipFunc (scaled);
+            channelData[sample] = clipped * thresholdLin;
+        }
     }
+
+    // Downsample back to original rate
+    oversamplers[static_cast<size_t> (osIndex)]->processSamplesDown (block);
+
+    // Apply output gain
+    block.multiplyBy (outputGain);
+
+    // Mix wet with dry
+    dryWetMixer.mixWetSamples (block);
 }
 
 //==============================================================================
@@ -145,15 +304,17 @@ juce::AudioProcessorEditor* AudioClipperAudioProcessor::createEditor()
 //==============================================================================
 void AudioClipperAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    auto state = parameters.copyState();
+    std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    copyXmlToBinary (*xml, destData);
 }
 
 void AudioClipperAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName (parameters.state.getType()))
+            parameters.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
 //==============================================================================
