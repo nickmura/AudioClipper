@@ -157,10 +157,6 @@ void AudioClipperAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // TEMPORARY BYPASS TEST - just pass audio straight through
-    // If you hear audio now, the problem is in the processing code
-    return;
-
     // Get parameter values and convert from dB to linear gain
     float inputGainDb  = (inputGainParam != nullptr) ? inputGainParam->load() : 0.0f;
     float outputGainDb = (outputGainParam != nullptr) ? outputGainParam->load() : 0.0f;
