@@ -79,10 +79,17 @@ private:
     std::atomic<float>* thresholdParam = nullptr;
     std::atomic<float>* mixParam = nullptr;
     std::atomic<float>* oversamplingParam = nullptr;
+    std::atomic<float>* stereoLinkParam = nullptr;
+    std::atomic<float>* midSideModeParam = nullptr;
+    std::atomic<float>* autoGainParam = nullptr;
+    std::atomic<float>* ceilingParam = nullptr;
 
     // DSP components
     std::array<std::unique_ptr<juce::dsp::Oversampling<float>>, 3> oversamplers;
     juce::dsp::DryWetMixer<float> dryWetMixer { 512 };
+
+    // DC blocking filters (one per channel)
+    std::array<juce::dsp::IIR::Filter<float>, 2> dcBlockFilters;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioClipperAudioProcessor)
 };

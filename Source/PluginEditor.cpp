@@ -61,6 +61,16 @@ AudioClipperAudioProcessorEditor::AudioClipperAudioProcessorEditor (AudioClipper
     mixLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (mixLabel);
 
+    // Ceiling Slider
+    ceilingSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    ceilingSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 60, 20);
+    ceilingSlider.setTextValueSuffix (" dB");
+    addAndMakeVisible (ceilingSlider);
+
+    ceilingLabel.setText ("Ceiling", juce::dontSendNotification);
+    ceilingLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (ceilingLabel);
+
     // Oversampling ComboBox
     oversamplingLabel.setText ("Oversampling", juce::dontSendNotification);
     oversamplingLabel.setJustificationType (juce::Justification::centred);
@@ -69,15 +79,24 @@ AudioClipperAudioProcessorEditor::AudioClipperAudioProcessorEditor (AudioClipper
     oversamplingCombo.addItemList (juce::StringArray { "Off", "2x", "4x" }, 1);
     addAndMakeVisible (oversamplingCombo);
 
+    // Toggle buttons
+    addAndMakeVisible (stereoLinkButton);
+    addAndMakeVisible (midSideModeButton);
+    addAndMakeVisible (autoGainButton);
+
     // Attach controls to parameters
     inputGainAttachment    = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.parameters, "inputGain", inputGainSlider);
     outputGainAttachment   = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.parameters, "outputGain", outputGainSlider);
     thresholdAttachment    = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.parameters, "threshold", thresholdSlider);
     mixAttachment          = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.parameters, "mix", mixSlider);
+    ceilingAttachment      = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (audioProcessor.parameters, "ceiling", ceilingSlider);
     clipTypeAttachment     = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.parameters, "clipType", clipTypeCombo);
     oversamplingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (audioProcessor.parameters, "oversampling", oversamplingCombo);
+    stereoLinkAttachment   = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (audioProcessor.parameters, "stereoLink", stereoLinkButton);
+    midSideModeAttachment  = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (audioProcessor.parameters, "midSideMode", midSideModeButton);
+    autoGainAttachment     = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (audioProcessor.parameters, "autoGain", autoGainButton);
 
-    setSize (500, 380);
+    setSize (500, 450);
 }
 
 AudioClipperAudioProcessorEditor::~AudioClipperAudioProcessorEditor()
@@ -106,9 +125,9 @@ void AudioClipperAudioProcessorEditor::resized()
     clipTypeLabel.setBounds (clipTypeRow.removeFromLeft (80).reduced (5));
     clipTypeCombo.setBounds (clipTypeRow.reduced (5, 5).withWidth (150));
 
-    // Knobs area (4 knobs in a row)
-    auto knobArea = bounds.removeFromTop (200);
-    int knobWidth = knobArea.getWidth() / 4;
+    // Knobs area (5 knobs in a row)
+    auto knobArea = bounds.removeFromTop (180);
+    int knobWidth = knobArea.getWidth() / 5;
 
     // Input Gain
     auto inputArea = knobArea.removeFromLeft (knobWidth);
@@ -125,10 +144,22 @@ void AudioClipperAudioProcessorEditor::resized()
     outputGainLabel.setBounds (outputArea.removeFromTop (25));
     outputGainSlider.setBounds (outputArea.reduced (5));
 
+    // Ceiling
+    auto ceilingArea = knobArea.removeFromLeft (knobWidth);
+    ceilingLabel.setBounds (ceilingArea.removeFromTop (25));
+    ceilingSlider.setBounds (ceilingArea.reduced (5));
+
     // Mix
     auto mixArea = knobArea;
     mixLabel.setBounds (mixArea.removeFromTop (25));
     mixSlider.setBounds (mixArea.reduced (5));
+
+    // Toggle buttons row
+    auto toggleRow = bounds.removeFromTop (35);
+    int toggleWidth = toggleRow.getWidth() / 3;
+    stereoLinkButton.setBounds (toggleRow.removeFromLeft (toggleWidth).reduced (10, 5));
+    midSideModeButton.setBounds (toggleRow.removeFromLeft (toggleWidth).reduced (10, 5));
+    autoGainButton.setBounds (toggleRow.reduced (10, 5));
 
     // Oversampling row
     auto osRow = bounds.removeFromTop (40);
