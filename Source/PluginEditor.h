@@ -14,7 +14,8 @@
 //==============================================================================
 /**
 */
-class AudioClipperAudioProcessorEditor  : public juce::AudioProcessorEditor
+class AudioClipperAudioProcessorEditor  : public juce::AudioProcessorEditor,
+                                          private juce::Timer
 {
 public:
     AudioClipperAudioProcessorEditor (AudioClipperAudioProcessor&);
@@ -24,7 +25,33 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    //==============================================================================
+    // Nested component: Level Meter
+    class LevelMeter : public juce::Component
+    {
+    public:
+        void setLevel (float newLevel);
+        void paint (juce::Graphics& g) override;
+
+    private:
+        float displayLevel = 0.0f;
+    };
+
+    //==============================================================================
+    // Nested component: Transfer Curve Display
+    class TransferCurveDisplay : public juce::Component
+    {
+    public:
+        void updateCurve (int clipTypeIndex);
+        void paint (juce::Graphics& g) override;
+
+    private:
+        std::array<float, 128> curveData {};
+        int currentClipType = -1;
+    };
+
 private:
+    void timerCallback() override;
     AudioClipperAudioProcessor& audioProcessor;
 
     // Sliders
@@ -67,6 +94,11 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> stereoLinkAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> midSideModeAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> autoGainAttachment;
+
+    // Visualization components
+    LevelMeter inputMeterL, inputMeterR;
+    LevelMeter outputMeterL, outputMeterR;
+    TransferCurveDisplay transferCurveDisplay;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioClipperAudioProcessorEditor)
 };

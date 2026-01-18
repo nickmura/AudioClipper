@@ -309,6 +309,29 @@ void AudioClipperAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Apply input gain
     block.multiplyBy (inputGain);
 
+    // Capture input peak levels for metering
+    {
+        float peakL = 0.0f, peakR = 0.0f;
+        const auto numCh = static_cast<int> (block.getNumChannels());
+        const auto numSamp = static_cast<int> (block.getNumSamples());
+
+        if (numCh > 0)
+        {
+            auto* dataL = block.getChannelPointer (0);
+            for (int i = 0; i < numSamp; ++i)
+                peakL = std::max (peakL, std::abs (dataL[i]));
+        }
+        if (numCh > 1)
+        {
+            auto* dataR = block.getChannelPointer (1);
+            for (int i = 0; i < numSamp; ++i)
+                peakR = std::max (peakR, std::abs (dataR[i]));
+        }
+
+        inputPeakL.store (peakL, std::memory_order_relaxed);
+        inputPeakR.store (peakR, std::memory_order_relaxed);
+    }
+
     const auto numSamples = buffer.getNumSamples();
     const bool isStereo = totalNumInputChannels >= 2;
 
@@ -415,6 +438,27 @@ void AudioClipperAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         {
             channelData[i] = juce::jlimit (-ceilingLin, ceilingLin, channelData[i]);
         }
+    }
+
+    // Capture output peak levels for metering (after ceiling, before dry/wet mix)
+    {
+        float peakL = 0.0f, peakR = 0.0f;
+
+        if (totalNumInputChannels > 0)
+        {
+            auto* dataL = buffer.getReadPointer (0);
+            for (int i = 0; i < numSamples; ++i)
+                peakL = std::max (peakL, std::abs (dataL[i]));
+        }
+        if (totalNumInputChannels > 1)
+        {
+            auto* dataR = buffer.getReadPointer (1);
+            for (int i = 0; i < numSamples; ++i)
+                peakR = std::max (peakR, std::abs (dataR[i]));
+        }
+
+        outputPeakL.store (peakL, std::memory_order_relaxed);
+        outputPeakR.store (peakR, std::memory_order_relaxed);
     }
 
     // Mix wet with dry
