@@ -79,10 +79,31 @@ private:
     std::atomic<float>* thresholdParam = nullptr;
     std::atomic<float>* mixParam = nullptr;
     std::atomic<float>* oversamplingParam = nullptr;
+    std::atomic<float>* stereoLinkParam = nullptr;
+    std::atomic<float>* midSideModeParam = nullptr;
+    std::atomic<float>* autoGainParam = nullptr;
+    std::atomic<float>* ceilingParam = nullptr;
 
     // DSP components
     std::array<std::unique_ptr<juce::dsp::Oversampling<float>>, 3> oversamplers;
     juce::dsp::DryWetMixer<float> dryWetMixer { 512 };
 
+    // DC blocking filters (one per channel)
+    std::array<juce::dsp::IIR::Filter<float>, 2> dcBlockFilters;
+
+    // Level metering (atomic for thread-safe transfer to UI)
+    std::atomic<float> inputPeakL { 0.0f };
+    std::atomic<float> inputPeakR { 0.0f };
+    std::atomic<float> outputPeakL { 0.0f };
+    std::atomic<float> outputPeakR { 0.0f };
+
+public:
+    // Accessors for level metering (UI thread reads these)
+    float getInputPeakL() const { return inputPeakL.load (std::memory_order_relaxed); }
+    float getInputPeakR() const { return inputPeakR.load (std::memory_order_relaxed); }
+    float getOutputPeakL() const { return outputPeakL.load (std::memory_order_relaxed); }
+    float getOutputPeakR() const { return outputPeakR.load (std::memory_order_relaxed); }
+
+private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioClipperAudioProcessor)
 };
