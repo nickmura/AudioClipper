@@ -1,5 +1,9 @@
 # AudioClipper
 
+
+<img width="507" height="548" alt="image" src="https://github.com/user-attachments/assets/cd759815-41a3-4285-a60c-c8bb48016ea8" />
+
+
 A saturation and clipping plugin for adding warmth, grit, or aggressive distortion to your audio. Built with JUCE.
 
 ## What it does
@@ -61,3 +65,4 @@ Builds/MacOSX/         - Xcode project
 ---
 
 Built with [JUCE](https://juce.com/)
+
